@@ -7,6 +7,7 @@ module ScoutRails
   class Agent
     # Headers passed up with all API requests.
     HTTP_HEADERS = { "Agent-Hostname" => Socket.gethostname }
+    DEFAULT_HOST = 'scoutapp.com'
     # see self.instance
     @@instance = nil 
     
@@ -241,7 +242,7 @@ module ScoutRails
         response =  post( checkin_uri,
                            Marshal.dump(metrics),
                            "Content-Type"     => "application/json" )
-        if response
+        if response and response.is_a?(Net::HTTPSuccess)
           directives = Marshal.load(response.body)
           self.metric_lookup.merge!(directives[:metric_lookup])
           logger.debug "Metric Cache Size: #{metric_lookup.size}"
@@ -254,7 +255,7 @@ module ScoutRails
     end
     
     def checkin_uri
-      URI.parse("http://#{config.settings['host']}/app/#{config.settings['key']}/checkin.scout?name=#{CGI.escape(config.settings['name'])}")
+      URI.parse("http://#{config.settings['host'] || DEFAULT_HOST}/app/#{config.settings['key']}/checkin.scout?name=#{CGI.escape(config.settings['name'])}")
     end
     
     def post(url, body, headers = Hash.new)
@@ -278,11 +279,7 @@ module ScoutRails
       when Net::HTTPSuccess, Net::HTTPNotModified
         logger.debug "/checkin OK"
       when Net::HTTPBadRequest
-        if response.code == 400
-          logger.info "/checkin FAILED: The Account Key [#{config.settings['key']}] is invalid."
-        else
-          logger.debug "/checkin FAILED: #{response.inspect}"
-        end
+        logger.warn "/checkin FAILED: The Account Key [#{config.settings['key']}] is invalid."
       else
         logger.debug "/checkin FAILED: #{response.inspect}"
       end
