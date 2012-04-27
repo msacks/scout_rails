@@ -10,7 +10,7 @@ Install the gem:
     
 Signup for a [Scout](https://scoutapp.com) account and copy the config file to RAILS_ROOT/config/scout_rails.yml.
       
-## Support Frameworks
+## Supported Frameworks
 
 * Rails 2.2 and greater
 
