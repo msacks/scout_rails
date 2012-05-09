@@ -2,6 +2,10 @@
 
 A Ruby gem for detailed Rails application performance analysis. Metrics are reported to [Scout](https://scoutapp.com), a hosted server and application monitoring service. For general server monitoring, see our [server monitoring agent](https://github.com/highgroove/scout-client).
 
+## Invite-Only BETA
+
+Rails Monitoring is only available to existing Scout customers. [Contact us](mailto:support@scoutapp.com) if you'd like to be in our BETA group.
+
 ## Screenshot
 
 ![Scout Rails Monitoring](http://dl.dropbox.com/u/468982/scout_rails_screenshot_gem.gif)

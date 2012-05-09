@@ -22,7 +22,7 @@ module ScoutRails
         ScoutRails::Agent.instance.logger.warn "No config file found at [#{config_file}]."
         @settings = {}
       else
-        @settings = YAML.load(ERB.new(File.read(config_file)).result(binding))[ScoutRails::Agent.instance.environment.env]  
+        @settings = YAML.load(ERB.new(File.read(config_file)).result(binding))[ScoutRails::Agent.instance.environment.env] || {} 
       end  
     rescue Exception => e
       ScoutRails::Agent.instance.logger.warn "Unable to load the config file."

@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = ScoutRails::VERSION
   s.authors     = ["Derek Haynes",'Andre Lewis']
   s.email       = ["support@scoutapp.com"]
-  s.homepage    = "http://scoutapp.com"
+  s.homepage    = "https://github.com/scoutapp/scout_rails"
   s.summary     = "Rails application performance monitoring"
   s.description = "Monitors a Ruby on Rails application and reports detailed metrics on performance to Scout, a hosted monitoring service."
 
