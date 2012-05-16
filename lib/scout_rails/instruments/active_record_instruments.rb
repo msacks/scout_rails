@@ -20,29 +20,9 @@ module ScoutRails::Instruments
       end
     end
     
-    # Searches for the first AR model in the call stack. If found, adds it to a Hash of 
-    # classes and methods to later instrument. Used to provide a better breakdown.
-    def scout_instrument_caller(called)
-      model_call = called.find { |call| call =~ /\/app\/models\/(.+)\.rb:\d+:in `(.+)'/ }
-      if model_call and !model_call.include?("without_scout_instrument")
-       set=ScoutRails::Agent.instance.dynamic_instruments[$1.camelcase] || Set.new
-       ScoutRails::Agent.instance.dynamic_instruments[$1.camelcase] = (set << $2)
-      end
-    end
-    
-    # Only instrument the caller if dynamic_instruments isn't disabled. By default, it is enabled.
-    def scout_dynamic?
-      dynamic=ScoutRails::Agent.instance.config.settings['dynamic_instruments']
-      dynamic.nil? or dynamic
-    end
-    
     def scout_ar_metric_name(sql,name)
       if name && (parts = name.split " ") && parts.size == 2
         model = parts.first
-        # samples 10% of calls
-        if scout_dynamic? and rand*10 < 1
-          scout_instrument_caller(caller(10)[0..9]) # for performance, limits the number of call stack items to examine
-        end
         operation = parts.last.downcase
         metric_name = case operation
                       when 'load' then 'find'
@@ -74,7 +54,6 @@ def add_instruments
     ActiveRecord::Base.class_eval do
        include ::ScoutRails::Tracer
     end
-    ScoutRails::Agent.instance.logger.debug "Dynamic instrumention is #{ActiveRecord::Base.connection.scout_dynamic? ? 'enabled' : 'disabled'}"
   end
 end
 

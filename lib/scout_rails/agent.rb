@@ -22,10 +22,6 @@ module ScoutRails
     attr_accessor :options # options passed to the agent when +#start+ is called.
     attr_accessor :metric_lookup # Hash used to lookup metric ids based on their name and scope
     
-    # Hash of class (values are Sets of method names) that should be instrumented by examining 
-    # the ActiveRecord call stack.
-    attr_accessor :dynamic_instruments
-    
     # All access to the agent is thru this class method to ensure multiple Agent instances are not initialized per-Ruby process. 
     def self.instance(options = {})
       @@instance ||= self.new(options)
@@ -40,7 +36,6 @@ module ScoutRails
       @store = ScoutRails::Store.new
       @layaway = ScoutRails::Layaway.new
       @config = ScoutRails::Config.new(options[:config_path])
-      @dynamic_instruments = Hash.new
       @metric_lookup = Hash.new
       @process_cpu=ScoutRails::Instruments::Process::ProcessCpu.new(1) # TODO: the argument is the number of processors
       @process_memory=ScoutRails::Instruments::Process::ProcessMemory.new
@@ -134,22 +129,6 @@ module ScoutRails
       60
     end
     
-    # Every time the worker thread completes, it calls this method 
-    # to add instruments to selected methods in the AR call stack.
-    def add_dynamic_instruments
-      dynamic_instruments.each do |class_name,to_instrument|
-        klass = class_name.constantize
-        klass.class_eval do 
-          if !klass.respond_to?(:instrument_method)
-            include ::ScoutRails::Tracer
-          end
-          to_instrument.each do |m|
-            self.instrument_method(m)
-          end
-        end
-      end
-    end
-    
     # Creates the worker thread. The worker thread is a loop that runs continuously. It sleeps for +Agent#period+ and when it wakes,
     # processes data, either saving it to disk or reporting to Scout.
     def start_worker_thread(connection_options = {})
@@ -166,7 +145,6 @@ module ScoutRails
               now = Time.now
             end
             process_metrics
-            add_dynamic_instruments
             while next_time <= now
               next_time += period
             end
