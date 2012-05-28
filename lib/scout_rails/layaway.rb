@@ -61,7 +61,6 @@ class ScoutRails::Layaway
       ScoutRails::Agent.instance.logger.debug "Local Storage is stale (#{Time.at(most_recent).strftime("%m/%d/%y %H:%M:%S %z")}). Not sending data."
       {}
     else
-      #ScoutRails::Agent.instance.logger.debug "Validated time slot: #{Time.at(most_recent).strftime("%m/%d/%y %H:%M:%S %z")}"
       data.first.last
     end
   rescue

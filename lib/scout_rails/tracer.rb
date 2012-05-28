@@ -18,9 +18,7 @@ module ScoutRails::Tracer
     end
     
     def instrument(metric_name, &block)
-      #ScoutRails::Agent.instance.logger.debug "Instrumenting: #{metric_name} w/scope: #{Thread::current[:scout_scope_name]}"
       stack_item = store.record(metric_name)
-      #ScoutRails::Agent.instance.logger.debug "Stack contains: #{store.stack.size} methods"
       begin
         yield
       ensure
@@ -29,14 +27,12 @@ module ScoutRails::Tracer
     end
     
     def instrument_method(method,metric_name = nil)
-      #ScoutRails::Agent.instance.logger.debug "Instrumenting method name: #{name} w/metric name: #{metric_name}"
       metric_name = metric_name || default_metric_name(method)
       return if !instrumentable?(method) or instrumented?(method,metric_name)
       class_eval instrumented_method_string(method, metric_name), __FILE__, __LINE__
       
       alias_method _uninstrumented_method_name(method, metric_name), method
       alias_method method, _instrumented_method_name(method, metric_name)
-      #ScoutRails::Agent.instance.logger.debug "Instrumented #{self.name}##{method} w/metric name: #{metric_name}"
     end
     
     private

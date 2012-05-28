@@ -9,13 +9,25 @@ class ScoutRails::Store
     @stack = Array.new
   end
   
+  # Stores aggregate metrics for the current transaction. When the transaction is finished, metrics
+  # are merged with the +metric_hash+.
+  def transaction_hash
+    Thread::current[:scout_transaction_hash] || Hash.new
+  end
+  
+  # Called when the last stack item completes for the current transaction to clear
+  # for the next run.
+  def reset_transaction!
+    Thread::current[:scout_scope_name] = nil
+    Thread::current[:scout_transaction_hash] = Hash.new
+  end
+  
   # Called at the start of Tracer#instrument:
   # (1) Either finds an existing MetricStats object in the metric_hash or 
   # initialize a new one. An existing MetricStats object is present if this +metric_name+ has already been instrumented.
   # (2) Adds a StackItem to the stack. This StackItem is returned and later used to validate the item popped off the stack
   # when an instrumented code block completes.
   def record(metric_name)
-    #ScoutRails::Agent.instance.logger.debug "recording #{metric_name}"
     item = ScoutRails::StackItem.new(metric_name)
     stack << item
     item
@@ -26,20 +38,19 @@ class ScoutRails::Store
     raise "items not equal: #{item.inspect} / #{sanity_check_item.inspect}" if item != sanity_check_item
     duration = Time.now - item.start_time
     if last=stack.last
-      #ScoutRails::Agent.instance.logger.debug "found an element on stack [#{last.inspect}]. adding duration #{duration} to children time [#{last.children_time}]"
       last.children_time += duration
     end
-    #ScoutRails::Agent.instance.logger.debug "popped #{item.inspect} off stack. duration: #{duration}s"
-    if stack.empty? # this is the last item on the stack. it shouldn't have a scope.
-      Thread::current[:scout_scope_name] = nil
-    end
     meta = ScoutRails::MetricMeta.new(item.metric_name)
-    #ScoutRails::Agent.instance.logger.debug "meta: #{meta.inspect}"
-    stat = metric_hash[meta] || ScoutRails::MetricStats.new
-    #ScoutRails::Agent.instance.logger.debug "found existing stat w/ky: #{meta}" if !stat.call_count.zero?
+    stat = transaction_hash[meta] || ScoutRails::MetricStats.new
+    
     stat.update!(duration,duration-item.children_time)
-    metric_hash[meta] = stat   
-    #ScoutRails::Agent.instance.logger.debug "metric hash has #{metric_hash.size} items"
+    transaction_hash[meta] = stat   
+    
+    if stack.empty?
+      ScoutRails::Agent.instance.logger.debug "Transaction complete. Merging #{transaction_hash.size} metrics."
+      merge_data(transaction_hash)
+      reset_transaction!
+    end
   end
   
   # Finds or creates the metric w/the given name in the metric_hash, and updates the time. Primarily used to 

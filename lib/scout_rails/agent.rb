@@ -117,7 +117,7 @@ module ScoutRails
     end
     
     def log_version_pid
-      logger.debug "Scout Agent [#{ScoutRails::VERSION}] Initialized"
+      logger.info "Scout Agent [#{ScoutRails::VERSION}] Initialized"
     end
     
     def log_path
@@ -227,8 +227,8 @@ module ScoutRails
         end
       end
     rescue
-      logger.debug "Error on checkin to #{checkin_uri.to_s}"
-      logger.debug $!.message
+      logger.info "Error on checkin to #{checkin_uri.to_s}"
+      logger.info $!.message
       logger.debug $!.backtrace
     end
     
